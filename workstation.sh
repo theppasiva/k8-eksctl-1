@@ -79,3 +79,37 @@ VALIDATE $? "aws-ebs-csi-driver installation through helm"
 
 curl -sS https://webinstall.dev/k9s | bash
 VALIDATE $? "k9's installation"
+
+kubectl apply -f https://github.com/kubernetes-sigs/metrics-server/releases/latest/download/components.yaml
+VALIDATE $? "metrics server installation"
+
+#load balancer creation steps
+# eksctl utils associate-iam-oidc-provider \
+#     --region us-east-1 \
+#     --cluster roboshop \
+#     --approve
+# VALIDATE $? "IAM OIDC installation"
+
+# curl -o iam-policy.json https://raw.githubusercontent.com/kubernetes-sigs/aws-load-balancer-controller/v2.11.0/docs/install/iam_policy.json
+# VALIDATE $? "download IAM policy"
+
+# aws iam create-policy \
+#     --policy-name AWSLoadBalancerControllerIAMPolicy \
+#     --policy-document file://iam-policy.json
+# VALIDATE $? "create policy of IAM policy"
+
+# eksctl create iamserviceaccount \
+# --cluster=roboshop \
+# --namespace=kube-system \
+# --name=aws-load-balancer-controller \
+# --attach-policy-arn=arn:aws:iam::891377322331:policy/AWSLoadBalancerControllerIAMPolicy \
+# --override-existing-serviceaccounts \
+# --region us-east-1 \
+# --approve
+# VALIDATE $? "create IAM role"
+
+#loadbalancer using helm charts
+helm repo add eks https://aws.github.io/eks-charts
+VALIDATE $? "create eks repository"
+helm install aws-load-balancer-controller eks/aws-load-balancer-controller --set clusterName=roboshop -n kube-system --set serviceAccount.create=false --set serviceAccount.name=aws-load-balancer-controller
+VALIDATE $? "create eks loadbalancer"
